@@ -13,6 +13,8 @@ class InitHttpClient(object):
         if resp.status == 200 and data != b'':
             print(data.decode())
             print('[done]')
+        elif resp.status == 404:
+            print('%s: there was no such queue created' % resp.reason)
         else:
             print('[done]')
         self._conn.close()
@@ -23,6 +25,9 @@ class InitHttpClient(object):
         resp = self._conn.getresponse()
         if resp.status == 200:
             print('[done]')
+            self._conn.close()
+        if resp.status == 403:
+            print('%s: you can create only up to 1000 queues' % resp.reason)
             self._conn.close()
 
 

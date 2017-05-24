@@ -5,56 +5,67 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import queue
 
 
+QUEUE_SIZE = 100
+QUEUE_ALIAS_MIN = 0
+QUEUE_ALIAS_MAX = 1000
+
+
 class HttpRequestsHandler(BaseHTTPRequestHandler):
     ADDRESS = 'localhost'
-    QUEUES_D = {
-        0: queue.Queue(maxsize=100),
+    QUEUES = {
+        0: queue.Queue(maxsize=QUEUE_SIZE),
     }
 
     def do_GET(self):
         _queue = self.path.split('/')[-1]
-        if _queue != '' and 0 <= int(_queue) <= 1000:
+        if QUEUE_ALIAS_MIN <= int(_queue) <= QUEUE_ALIAS_MAX:
             self.send_response(200)
             self.end_headers()
             self.wfile.write(bytes(self._get_item_from_queue(int(_queue)), 'utf-8'))
-        return
+        else:
+            self.send_response(404)
+            self.end_headers()
 
     def do_POST(self):
         message = self.path.split('/')[-1]
         ctype, pdict = cgi.parse_header(self.headers['Queue'])
-        if 0 <= int(ctype) <= 1000:
+        if QUEUE_ALIAS_MIN <= int(ctype) <= QUEUE_ALIAS_MAX:
             self._add_item_to_queue(message, int(ctype))
             self.send_response(200)
             self.end_headers()
-        return
+        else:
+            self.send_response(403)
+            self.end_headers()
 
     def _get_item_from_queue(self, queue_alias):
         if queue_alias == 0:
             try:
-                return self.QUEUES_D[0].get(block=False)
+                return self.QUEUES[0].get(block=False)
             except queue.Empty:
                 return ''
 
-        if queue_alias in self.QUEUES_D:
+        elif queue_alias in self.QUEUES:
             try:
-                return self.QUEUES_D[queue_alias].get(block=False)
+                return self.QUEUES[queue_alias].get(block=False)
             except queue.Empty:
                 return ''
+        else:
+            return ''
 
     def _add_item_to_queue(self, item, queue_alias):
         if queue_alias == 0:
             try:
-                self.QUEUES_D[0].put(item, block=False)
+                self.QUEUES[0].put(item, block=False)
             except queue.Full:
                 pass
-        elif queue_alias in self.QUEUES_D:
+        elif queue_alias in self.QUEUES:
             try:
-                self.QUEUES_D[queue_alias].put(item, block=False)
+                self.QUEUES[queue_alias].put(item, block=False)
             except queue.Full:
                 pass
         else:
-            self.QUEUES_D[queue_alias] = queue.Queue(maxsize=100)
-            self.QUEUES_D[queue_alias].put(item, block=False)
+            self.QUEUES[queue_alias] = queue.Queue(maxsize=QUEUE_SIZE)
+            self.QUEUES[queue_alias].put(item, block=False)
 
 
 def create_server_parser():
