@@ -27,11 +27,13 @@ class InitHttpClient(object):
         if resp.status == 200 and data != b'':
             test_print(data.decode())
             test_print('[done]')
+            return resp, data.decode()
         elif resp.status == 404:
             test_print('%s: there was no such queue created' % resp.reason)
+            return resp, data.decode()
         else:
             test_print('[done]')
-        self._conn.close()
+            return resp, data.decode()
 
     def post_message(self, message, queue):
         try:
@@ -43,10 +45,13 @@ class InitHttpClient(object):
             sys.exit(2)
         if resp.status == 200:
             test_print('[done]')
-            self._conn.close()
+            return resp
         if resp.status == 403:
             test_print('%s: you can create only up to %s queues' % (resp.reason, QUEUE_ALIAS_MAX))
-            self._conn.close()
+            return resp
+
+    def close_connection(self):
+        self._conn.close()
 
 
 def create_client_parser():
@@ -100,8 +105,10 @@ def main():
     client = create_client(DEFAULT_HOST, args.port)
     if args.func == 'get':
         client.get_message(args.queue)
+        client.close_connection()
     if args.func == 'post':
         client.post_message(args.message, args.queue)
+        client.close_connection()
 
 
 if __name__ == '__main__':
