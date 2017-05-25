@@ -37,8 +37,8 @@ class InitHttpClient(object):
 
     def post_message(self, message, queue):
         try:
-            headers = {'Queue': queue}
-            self._conn.request('POST', '%s' % message, headers=headers)
+            headers = {'Message': message, 'Queue': queue}
+            self._conn.request('POST', '', headers=headers)
             resp = self._conn.getresponse()
         except ConnectionRefusedError:
             test_print(CONNECTION_REFUSE_PHRASE)

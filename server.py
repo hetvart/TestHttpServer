@@ -32,10 +32,10 @@ class HttpRequestsHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        message = self.path.split('/')[-1]
-        ctype, pdict = cgi.parse_header(self.headers['Queue'])
-        if QUEUE_ALIAS_MIN <= int(ctype) <= QUEUE_ALIAS_MAX:
-            self._add_item_to_queue(message, int(ctype))
+        message, pdict = cgi.parse_header(self.headers['Message'])
+        _queue, pdict = cgi.parse_header(self.headers['Queue'])
+        if QUEUE_ALIAS_MIN <= int(_queue) <= QUEUE_ALIAS_MAX:
+            self._add_item_to_queue(message, int(_queue))
             self.send_response(200)
             self.end_headers()
         else:
