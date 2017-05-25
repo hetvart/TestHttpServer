@@ -75,6 +75,8 @@ $ python -m unittest tests.test_module_name
 ```
 > where test_module_name it's a file *.py name within tests package
 
+> NOTE: start the server before running tests
+
 
 
 
