@@ -4,18 +4,23 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 import queue
 
+import sys
 
+from utils import test_print
+
+DEFAULT_HOST = 'localhost'
+DEFAULT_PORT = 8080
 QUEUE_SIZE = 100
+QUEUES = {
+    0: queue.Queue(maxsize=QUEUE_SIZE),
+}
 QUEUE_ALIAS_MIN = 0
 QUEUE_ALIAS_MAX = 1000
+CONNECTION_REFUSE_PHRASE = 'Could not run the server. Probably the port you provided is busy.' \
+                           'Please check your host/port configuration.'
 
 
 class HttpRequestsHandler(BaseHTTPRequestHandler):
-    ADDRESS = 'localhost'
-    QUEUES = {
-        0: queue.Queue(maxsize=QUEUE_SIZE),
-    }
-
     def do_GET(self):
         _queue = self.path.split('/')[-1]
         if QUEUE_ALIAS_MIN <= int(_queue) <= QUEUE_ALIAS_MAX:
@@ -40,13 +45,13 @@ class HttpRequestsHandler(BaseHTTPRequestHandler):
     def _get_item_from_queue(self, queue_alias):
         if queue_alias == 0:
             try:
-                return self.QUEUES[0].get(block=False)
+                return QUEUES[0].get(block=False)
             except queue.Empty:
                 return ''
 
-        elif queue_alias in self.QUEUES:
+        elif queue_alias in QUEUES:
             try:
-                return self.QUEUES[queue_alias].get(block=False)
+                return QUEUES[queue_alias].get(block=False)
             except queue.Empty:
                 return ''
         else:
@@ -55,41 +60,47 @@ class HttpRequestsHandler(BaseHTTPRequestHandler):
     def _add_item_to_queue(self, item, queue_alias):
         if queue_alias == 0:
             try:
-                self.QUEUES[0].put(item, block=False)
+                QUEUES[0].put(item, block=False)
             except queue.Full:
                 pass
-        elif queue_alias in self.QUEUES:
+        elif queue_alias in QUEUES:
             try:
-                self.QUEUES[queue_alias].put(item, block=False)
+                QUEUES[queue_alias].put(item, block=False)
             except queue.Full:
                 pass
         else:
-            self.QUEUES[queue_alias] = queue.Queue(maxsize=QUEUE_SIZE)
-            self.QUEUES[queue_alias].put(item, block=False)
+            QUEUES[queue_alias] = queue.Queue(maxsize=QUEUE_SIZE)
+            QUEUES[queue_alias].put(item, block=False)
 
 
 def create_server_parser():
     parser = ArgumentParser(description='Run http server to receive and store messages in queues')
     parser.add_argument('port',
                         action='store',
-                        default=8080,
+                        default=DEFAULT_PORT,
                         nargs='?',
-                        const=8080,
-                        help='specifies a port to listen at (default: 8080)',
+                        const=DEFAULT_PORT,
+                        help='specifies a port to listen at (default: %s)' % DEFAULT_PORT,
                         type=int)
     return parser
 
 
-def main():
+def run_server(port):
     try:
-        parser = create_server_parser()
-        args = parser.parse_args()
-        server = HTTPServer((HttpRequestsHandler.ADDRESS, args.port), HttpRequestsHandler)
+        server = HTTPServer((DEFAULT_HOST, port), HttpRequestsHandler)
         server.serve_forever()
+    except OSError:
+        test_print(CONNECTION_REFUSE_PHRASE)
+        sys.exit(2)
     except KeyboardInterrupt:
         server.server_close()
 
 
+def main():
+    parser = create_server_parser()
+    args = parser.parse_args()
+    run_server(args.port)
+
+
 if __name__ == '__main__':
     main()
-
