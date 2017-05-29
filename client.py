@@ -18,7 +18,8 @@ class InitHttpClient(object):
 
     def get_message(self, queue):
         try:
-            self._conn.request('GET', '%s' % queue)
+            headers = {'Queue': queue}
+            self._conn.request('GET', '', headers=headers)
             resp = self._conn.getresponse()
             data = resp.read()
         except ConnectionRefusedError:

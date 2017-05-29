@@ -20,7 +20,7 @@ CONNECTION_REFUSE_PHRASE = 'Could not run the server. Probably the port you prov
 
 class HttpRequestsHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        _queue = self.path.split('/')[-1]
+        _queue, pdict = cgi.parse_header(self.headers['Queue'])
         if QUEUE_ALIAS_MIN <= int(_queue) <= QUEUE_ALIAS_MAX:
             self.send_response(200)
             self.end_headers()
