@@ -11,9 +11,7 @@ from utils import test_print
 DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 8080
 QUEUE_SIZE = 100
-QUEUES = {
-    0: queue.Queue(maxsize=QUEUE_SIZE),
-}
+QUEUES = {}
 QUEUE_ALIAS_MIN = 0
 QUEUE_ALIAS_MAX = 1000
 CONNECTION_REFUSE_PHRASE = 'Could not run the server. Probably the port you provided is busy.' \
@@ -43,34 +41,21 @@ class HttpRequestsHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def _get_item_from_queue(self, queue_alias):
-        if queue_alias == 0:
-            try:
-                return QUEUES[0].get(block=False)
-            except queue.Empty:
-                return ''
-
-        elif queue_alias in QUEUES:
+        if queue_alias in QUEUES.keys():
             try:
                 return QUEUES[queue_alias].get(block=False)
             except queue.Empty:
-                return ''
-        else:
-            return ''
+                QUEUES.pop(queue_alias)
+        return ''
 
     def _add_item_to_queue(self, item, queue_alias):
-        if queue_alias == 0:
-            try:
-                QUEUES[0].put(item, block=False)
-            except queue.Full:
-                pass
-        elif queue_alias in QUEUES:
+        if queue_alias in QUEUES.keys():
             try:
                 QUEUES[queue_alias].put(item, block=False)
             except queue.Full:
-                pass
-        else:
-            QUEUES[queue_alias] = queue.Queue(maxsize=QUEUE_SIZE)
-            QUEUES[queue_alias].put(item, block=False)
+                return
+        QUEUES[queue_alias] = queue.Queue(maxsize=QUEUE_SIZE)
+        QUEUES[queue_alias].put(item, block=False)
 
 
 def create_server_parser():
