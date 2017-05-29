@@ -30,7 +30,7 @@ class InitHttpClient(object):
             test_print('[done]')
             return resp, data.decode()
         if resp.status == 403:
-            test_print('%s: maximum queue aliases exceeded' % resp.reason)
+            test_print('%s: incorrect queue alias or maximum queue aliases exceeded' % resp.reason)
             return resp, data.decode()
         else:
             test_print('[done]')

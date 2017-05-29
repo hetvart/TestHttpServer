@@ -21,10 +21,16 @@ CONNECTION_REFUSE_PHRASE = 'Could not run the server. Probably the port you prov
 class HttpRequestsHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         _queue, pdict = cgi.parse_header(self.headers['Queue'])
-        if QUEUE_ALIAS_MIN <= int(_queue) <= QUEUE_ALIAS_MAX:
+        try:
+            _queue = int(_queue)
+        except ValueError:
+            self.send_response(403)
+            self.end_headers()
+            return
+        if QUEUE_ALIAS_MIN <= _queue <= QUEUE_ALIAS_MAX:
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(bytes(self._get_item_from_queue(int(_queue)), 'utf-8'))
+            self.wfile.write(bytes(self._get_item_from_queue(_queue), 'utf-8'))
         else:
             self.send_response(403)
             self.end_headers()
@@ -32,8 +38,14 @@ class HttpRequestsHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         message, pdict = cgi.parse_header(self.headers['Message'])
         _queue, pdict = cgi.parse_header(self.headers['Queue'])
-        if QUEUE_ALIAS_MIN <= int(_queue) <= QUEUE_ALIAS_MAX and message:
-            self._add_item_to_queue(message, int(_queue))
+        try:
+            _queue = int(_queue)
+        except ValueError:
+            self.send_response(403)
+            self.end_headers()
+            return
+        if QUEUE_ALIAS_MIN <= _queue <= QUEUE_ALIAS_MAX and message:
+            self._add_item_to_queue(message, _queue)
             self.send_response(200)
             self.end_headers()
         else:
