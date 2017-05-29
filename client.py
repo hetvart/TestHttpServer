@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from http.client import HTTPConnection
 
 from utils import test_print
-from server import QUEUE_ALIAS_MAX, DEFAULT_PORT, DEFAULT_HOST
+from server import DEFAULT_PORT, DEFAULT_HOST
 
 
 CONNECTION_REFUSE_PHRASE = 'Connection refused. Please check that the server is being run or ' \
@@ -28,8 +28,8 @@ class InitHttpClient(object):
             test_print(data.decode())
             test_print('[done]')
             return resp, data.decode()
-        elif resp.status == 404:
-            test_print('%s: there was no such queue created' % resp.reason)
+        if resp.status == 403:
+            test_print('%s: maximum queue aliases exceeded' % resp.reason)
             return resp, data.decode()
         else:
             test_print('[done]')
@@ -47,7 +47,7 @@ class InitHttpClient(object):
             test_print('[done]')
             return resp
         if resp.status == 403:
-            test_print('%s: you can create only up to %s queues' % (resp.reason, QUEUE_ALIAS_MAX))
+            test_print('%s: attempt to send an empty message or maximum queue aliases exceeded' % resp.reason)
             return resp
 
     def close_connection(self):

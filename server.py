@@ -26,13 +26,13 @@ class HttpRequestsHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(bytes(self._get_item_from_queue(int(_queue)), 'utf-8'))
         else:
-            self.send_response(404)
+            self.send_response(403)
             self.end_headers()
 
     def do_POST(self):
         message, pdict = cgi.parse_header(self.headers['Message'])
         _queue, pdict = cgi.parse_header(self.headers['Queue'])
-        if QUEUE_ALIAS_MIN <= int(_queue) <= QUEUE_ALIAS_MAX:
+        if QUEUE_ALIAS_MIN <= int(_queue) <= QUEUE_ALIAS_MAX and message:
             self._add_item_to_queue(message, int(_queue))
             self.send_response(200)
             self.end_headers()
