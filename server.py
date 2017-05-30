@@ -63,7 +63,7 @@ class HttpRequestsHandler(BaseHTTPRequestHandler):
     def _add_item_to_queue(self, item, queue_alias):
         if queue_alias in QUEUES.keys():
             try:
-                QUEUES[queue_alias].put(item, block=False)
+                return QUEUES[queue_alias].put(item, block=False)
             except queue.Full:
                 return
         QUEUES[queue_alias] = queue.Queue(maxsize=QUEUE_SIZE)
