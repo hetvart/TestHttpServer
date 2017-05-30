@@ -20,10 +20,10 @@ CONNECTION_REFUSE_PHRASE = 'Could not run the server. Probably the port you prov
 
 class HttpRequestsHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        _queue, pdict = cgi.parse_header(self.headers['Queue'])
         try:
+            _queue, pdict = cgi.parse_header(self.headers['Queue'])
             _queue = int(_queue)
-        except ValueError:
+        except (ValueError, TypeError):
             self.send_response(403)
             self.end_headers()
             return
@@ -36,11 +36,11 @@ class HttpRequestsHandler(BaseHTTPRequestHandler):
             self.end_headers()
 
     def do_POST(self):
-        message, pdict = cgi.parse_header(self.headers['Message'])
-        _queue, pdict = cgi.parse_header(self.headers['Queue'])
         try:
+            message, pdict = cgi.parse_header(self.headers['Message'])
+            _queue, pdict = cgi.parse_header(self.headers['Queue'])
             _queue = int(_queue)
-        except ValueError:
+        except (ValueError, TypeError):
             self.send_response(403)
             self.end_headers()
             return
