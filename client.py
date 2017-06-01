@@ -16,27 +16,17 @@ class InitHttpClient(object):
     def __init__(self, address, port):
         self._conn = HTTPConnection(address, port)
 
-    def get_message(self, queue):
+    def send_get_request(self, queue):
         try:
             headers = {'Queue': queue}
             self._conn.request('GET', '', headers=headers)
             resp = self._conn.getresponse()
-            data = resp.read()
         except ConnectionRefusedError:
             test_print(CONNECTION_REFUSE_PHRASE)
             sys.exit(2)
-        if resp.status == 200 and data != b'':
-            test_print(data.decode())
-            test_print('[done]')
-            return resp, data.decode()
-        if resp.status == 403:
-            test_print('%s: incorrect queue alias or maximum queue aliases exceeded' % resp.reason)
-            return resp, data.decode()
-        else:
-            test_print('[done]')
-            return resp, data.decode()
+        return resp
 
-    def post_message(self, message, queue):
+    def send_post_request(self, message, queue):
         try:
             headers = {'Message': message, 'Queue': queue}
             self._conn.request('POST', '', headers=headers)
@@ -44,12 +34,7 @@ class InitHttpClient(object):
         except ConnectionRefusedError:
             test_print(CONNECTION_REFUSE_PHRASE)
             sys.exit(2)
-        if resp.status == 200:
-            test_print('[done]')
-            return resp
-        if resp.status == 403:
-            test_print('%s: attempt to send an empty message or maximum queue aliases exceeded' % resp.reason)
-            return resp
+        return resp
 
     def close_connection(self):
         self._conn.close()
@@ -94,22 +79,29 @@ def create_client_parser():
     return main_parser
 
 
-def create_client(host, port):
-
-    client = InitHttpClient(host, port)
-    return client
+def get_message(client_obj, queue_alias):
+    resp = client_obj.send_get_request(queue=queue_alias)
+    message = resp.read().decode()
+    if resp.status == 200:
+        if message:
+            test_print(message)
+        test_print('[done]')
+    if resp.status == 403:
+        test_print('%s: incorrect queue alias or maximum queue aliases exceeded' % resp.reason)
 
 
 def main():
     parser = create_client_parser()
     args = parser.parse_args()
-    client = create_client(DEFAULT_HOST, args.port)
+    client = InitHttpClient(DEFAULT_HOST, args.port)
     if args.func == 'get':
-        client.get_message(args.queue)
-        client.close_connection()
+        get_message(client, args.queue)
     if args.func == 'post':
-        client.post_message(args.message, args.queue)
-        client.close_connection()
+        resp = client.send_post_request(args.message, args.queue)
+        if resp.status == 200:
+            test_print('[done]')
+        if resp.status == 403:
+            test_print('%s: incorrect message, queue alias or maximum queue aliases exceeded' % resp.reason)
 
 
 if __name__ == '__main__':
