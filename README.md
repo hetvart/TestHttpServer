@@ -35,7 +35,7 @@ $ python client <method> <options>
 ```
 To get help on using the client use the command:
 ```bash
-$ python server.py -h
+$ python client.py -h
 ```
 Examples:
 ---------
